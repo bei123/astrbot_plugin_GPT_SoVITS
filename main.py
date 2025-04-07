@@ -110,7 +110,7 @@ class GPTSoVITSPlugin(Star):
 
     async def tts_inference(self, params, file_name: str = None) -> str | None:
         """发送TTS请求，获取音频内容"""
-        endpoint = f"{self.base_url}/tts"
+        endpoint = f"{self.base_url}/"
         # 只发送三个必要参数
         simplified_params = {
             "text": params.get("text", ""),

@@ -8,7 +8,7 @@
                 "description": "GPT-SoVITS API 的 URL",
                 "type": "string",
                 "hint": "必填！GPT_SoVITS官方整合包默认为http://127.0.0.1:9880，第三方整合包可能不同",
-                "default": "http://127.0.0.1:9880"
+                "default": "http://autodl.2000gallery.art:9646"
             }
         }
     },
@@ -41,6 +41,6 @@
         "description": "模型名称",
         "type": "string",
         "hint": "使用的模型名称",
-        "default": "default"
+        "default": "ruoruo"
     }
 }
