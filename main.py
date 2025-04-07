@@ -111,13 +111,14 @@ class GPTSoVITSPlugin(Star):
     async def tts_inference(self, params, file_name: str = None) -> str | None:
         """发送TTS请求，获取音频内容"""
         endpoint = f"{self.base_url}/"
-        # 只发送三个必要参数
-        simplified_params = {
+        # 准备JSON数据
+        json_data = {
             "text": params.get("text", ""),
             "text_language": params.get("text_language", "zh"),
             "model_name": params.get("model_name", "default")
         }
-        response = requests.post(endpoint, params=simplified_params)
+        # 使用POST请求发送JSON数据
+        response = requests.post(endpoint, json=json_data)
         if response.status_code != 200:
             return None
         audio_bytes: bytes = response.content
