@@ -28,6 +28,12 @@
                 "type": "int",
                 "hint": "超过此长度的文本不会被转成语音发送",
                 "default": 50
+            },
+            "random_model": {
+                "description": "是否随机选择模型",
+                "type": "bool",
+                "hint": "如果为True，将从模型列表中随机选择一个模型",
+                "default": false
             }
         }
     },
@@ -42,5 +48,11 @@
         "type": "string",
         "hint": "使用的模型名称",
         "default": "ruoruo"
+    },
+    "model_list": {
+        "description": "可用模型列表",
+        "type": "list",
+        "hint": "当random_model为True时，将从此列表中随机选择一个模型",
+        "default": ["ruoruo", "model2", "model3"]
     }
 }

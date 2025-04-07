@@ -27,13 +27,17 @@ class GPTSoVITSPlugin(Star):
         auto_config: Dict = config.get('auto_config')
         self.send_record_probability: float = auto_config.get("send_record_probability")  # 发语音的概率
         self.max_resp_text_len: int = auto_config.get('max_resp_text_len')
+        self.random_model: bool = auto_config.get('random_model', False)  # 是否随机选择模型
 
         # 简化配置，只保留必要的三个参数
         self.default_params = {
             "text": "",
             "text_language": config.get('text_language', "zh"),
-            "model_name": config.get('model_name', "default")
+            "model_name": config.get('model_name', "ruoruo")
         }
+        
+        # 获取模型列表
+        self.model_list = config.get('model_list', ["ruoruo", "model2", "model3"])
 
     # 在发送消息前，会触发 on_decorating_result 钩子
     @filter.on_decorating_result()
@@ -111,11 +115,18 @@ class GPTSoVITSPlugin(Star):
     async def tts_inference(self, params, file_name: str = None) -> str | None:
         """发送TTS请求，获取音频内容"""
         endpoint = f"{self.base_url}/"
+        
+        # 如果启用了随机模型功能，从模型列表中随机选择一个模型
+        model_name = params.get("model_name", "ruoruo")
+        if self.random_model and self.model_list:
+            model_name = random.choice(self.model_list)
+            logger.info(f"随机选择模型: {model_name}")
+        
         # 准备JSON数据
         json_data = {
             "text": params.get("text", ""),
             "text_language": params.get("text_language", "zh"),
-            "model_name": params.get("model_name", "default")
+            "model_name": model_name
         }
         # 使用POST请求发送JSON数据
         response = requests.post(endpoint, json=json_data)
