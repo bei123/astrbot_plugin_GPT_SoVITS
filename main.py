@@ -117,7 +117,7 @@ class GPTSoVITSPlugin(Star):
             "text_language": params.get("text_language", "zh"),
             "model_name": params.get("model_name", "default")
         }
-        response = requests.get(endpoint, params=simplified_params)
+        response = requests.post(endpoint, params=simplified_params)
         if response.status_code != 200:
             return None
         audio_bytes: bytes = response.content
