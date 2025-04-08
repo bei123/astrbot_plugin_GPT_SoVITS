@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.3.6"
+PLUGIN_VERSION = "1.3.7"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -74,11 +74,16 @@ class GPTSoVITSPlugin(Star):
         # 模型名称映射
         self.model_mapping: Dict[str, str] = config.get('model_mapping', {
             "若若": "ruoruo",
-            "若若酱": "ruoruo",
-            "ruoruo": "ruoruo",
-            "模型2": "model2",
-            "模型3": "model3"
+            "步非烟": "bufeiyanyan",
+            "欣小萌": "xinxiaomeng",
+            "杨幂": "yangmi"
         })
+        
+        # 自定义模型映射
+        self.custom_model_mapping: Dict[str, str] = config.get('custom_model_mapping', {})
+        
+        # 合并映射
+        self.model_mapping.update(self.custom_model_mapping)
 
     def _get_model_name(self, input_name: str) -> str:
         """获取实际的模型名称
