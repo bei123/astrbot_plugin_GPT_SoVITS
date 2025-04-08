@@ -54,51 +54,6 @@
         "type": "list",
         "hint": "当random_model为True时，将从此列表中随机选择一个模型",
         "default": ["ruoruo", "model2", "model3"]
-    },
-    "model_mapping": {
-        "description": "模型名称映射",
-        "type": "object",
-        "hint": "用于将用户输入的友好名称映射到实际的模型名称",
-        "default": {
-            "若若": "ruoruo",
-            "步非烟": "bufeiyanyan",
-            "欣小萌": "xinxiaomeng",
-            "杨幂": "yangmi"
-        },
-        "items": {
-            "若若": {
-                "description": "若若的映射名称",
-                "type": "string",
-                "default": "ruoruo"
-            },
-            "步非烟": {
-                "description": "步非烟的映射名称",
-                "type": "string",
-                "default": "bufeiyanyan"
-            },
-            "欣小萌": {
-                "description": "欣小萌的映射名称",
-                "type": "string",
-                "default": "xinxiaomeng"
-            },
-            "杨幂": {
-                "description": "杨幂的映射名称",
-                "type": "string",
-                "default": "yangmi"
-            }
-        }
-    },
-    "custom_model_mapping": {
-        "description": "自定义模型名称映射",
-        "type": "object",
-        "hint": "用户可以在这里添加自定义的模型名称映射",
-        "default": {},
-        "items": {
-            "string": {
-                "description": "自定义映射名称",
-                "type": "string",
-                "default": ""
-            }
-        }
     }
+    
 }

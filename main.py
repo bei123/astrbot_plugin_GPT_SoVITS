@@ -71,19 +71,14 @@ class GPTSoVITSPlugin(Star):
         # 模型列表
         self.model_list: List[str] = config.get('model_list', ["ruoruo"])
         
-        # 模型名称映射
-        self.model_mapping: Dict[str, str] = config.get('model_mapping', {
+        # 模型名称映射（硬编码）
+        self.model_mapping: Dict[str, str] = {
             "若若": "ruoruo",
             "步非烟": "bufeiyanyan",
             "欣小萌": "xinxiaomeng",
             "杨幂": "yangmi"
-        })
-        
-        # 自定义模型映射
-        self.custom_model_mapping: Dict[str, str] = config.get('custom_model_mapping', {})
-        
-        # 合并映射
-        self.model_mapping.update(self.custom_model_mapping)
+        }
+
 
     def _get_model_name(self, input_name: str) -> str:
         """获取实际的模型名称
