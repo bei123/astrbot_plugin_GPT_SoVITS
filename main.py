@@ -103,16 +103,16 @@ class GPTSoVITSPlugin(Star):
         yield event.chain_result(chain)
 
     @filter.regex(r"^说\s*(.+)$")
-    async def on_say_regex(self, event: AstrMessageEvent):
+    async def on_say(self, event: AstrMessageEvent):
         """说xxx，直接调用TTS，发送合成后的语音"""
         message = event.get_message_str()
         # 提取"说"后面的内容
-        if not message.startswith("说"):
-            return
-        
         send_text = message[1:].strip()  # 移除"说"并去除空白
         if not send_text:
             return
+
+        # 确保send_text是字符串类型
+        send_text = str(send_text)
 
         # 使用简化的参数结构
         params = {
