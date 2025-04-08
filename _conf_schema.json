@@ -61,10 +61,9 @@
         "hint": "用于将用户输入的友好名称映射到实际的模型名称",
         "default": {
             "若若": "ruoruo",
-            "若若酱": "ruoruo",
-            "ruoruo": "ruoruo",
-            "模型2": "model2",
-            "模型3": "model3"
+            "步非烟": "bufeiyanyan",
+            "欣小萌": "xinxiaomeng",
+            "杨幂": "yangmi"
         },
         "items": {
             "若若": {
@@ -72,25 +71,20 @@
                 "type": "string",
                 "default": "ruoruo"
             },
-            "若若酱": {
-                "description": "若若酱的映射名称",
+            "步非烟": {
+                "description": "步非烟的映射名称",
                 "type": "string",
-                "default": "ruoruo"
+                "default": "bufeiyanyan"
             },
-            "ruoruo": {
-                "description": "ruoruo的映射名称",
+            "欣小萌": {
+                "description": "欣小萌的映射名称",
                 "type": "string",
-                "default": "ruoruo"
+                "default": "xinxiaomeng"
             },
-            "模型2": {
-                "description": "模型2的映射名称",
+            "杨幂": {
+                "description": "杨幂的映射名称",
                 "type": "string",
-                "default": "model2"
-            },
-            "模型3": {
-                "description": "模型3的映射名称",
-                "type": "string",
-                "default": "model3"
+                "default": "yangmi"
             }
         }
     },
