@@ -76,8 +76,6 @@ class GPTSoVITSPlugin(Star):
         chain.clear() # 清空消息段
         chain.append(Record.fromFileSystem(save_path)) # 新增语音消息段
 
-
-
     @filter.command("说")
     async def on_regex(self, event: AstrMessageEvent, send_text: str = None):
         """说xxx，直接调用TTS，发送合成后的语音"""
@@ -100,7 +98,30 @@ class GPTSoVITSPlugin(Star):
 
         chain = [Record.fromFileSystem(save_path)]
         yield event.chain_result(chain)
-
+        
+    @filter.regex(r"^说(.+)$")
+    async def on_escape_say(self, event: AstrMessageEvent, match):
+        """要逃说xxx，直接调用TTS，发送合成后的语音"""
+        send_text = match.group(1)
+        if not send_text:
+            return
+            
+        # 使用简化的参数结构
+        params = {
+            "text": send_text,
+            "text_language": self.default_params["text_language"],
+            "model_name": self.default_params["model_name"]
+        }
+        
+        file_name = self.generate_file_name(event, params=params)
+        save_path = await self.tts_inference(params=params, file_name=file_name)
+        
+        if save_path is None:
+            logger.error("TTS任务执行失败！")
+            return
+            
+        chain = [Record.fromFileSystem(save_path)]
+        yield event.chain_result(chain)
 
     def generate_file_name(self,event: AstrMessageEvent, params) -> str:
         """生成文件名"""
