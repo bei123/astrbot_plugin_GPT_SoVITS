@@ -99,10 +99,9 @@ class GPTSoVITSPlugin(Star):
         chain = [Record.fromFileSystem(save_path)]
         yield event.chain_result(chain)
         
-    @filter.regex(r"^说(.+)$")
-    async def on_escape_say(self, event: AstrMessageEvent, match):
-        """要逃说xxx，直接调用TTS，发送合成后的语音"""
-        send_text = match.group(1)
+    @filter.command("要说", alias={"说"})
+    async def on_escape_say(self, event: AstrMessageEvent, send_text: str = None):
+        """要说xxx，直接调用TTS，发送合成后的语音"""
         if not send_text:
             return
             
