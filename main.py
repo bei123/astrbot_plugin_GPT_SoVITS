@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.3.0"
+PLUGIN_VERSION = "1.3.1"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -202,6 +202,28 @@ class GPTSoVITSPlugin(Star):
             logger.error(f"TTS服务重启失败: {e}")
         except Exception as e:
             logger.error(f"TTS服务重启出错: {e}")
+
+    @filter.command("model", alias={"模型"})
+    async def show_models(self, event: AstrMessageEvent) -> None:
+        """展示当前可用的模型列表
+        
+        Args:
+            event: 消息事件对象
+        """
+        if not self.model_list:
+            yield event.plain_result("当前没有配置任何模型")
+            return
+            
+        model_info = "当前可用模型列表：\n"
+        for i, model in enumerate(self.model_list, 1):
+            model_info += f"{i}. {model}\n"
+            
+        if self.random_model:
+            model_info += "\n当前设置为随机选择模型"
+        else:
+            model_info += f"\n当前默认使用模型：{self.default_params['model_name']}"
+            
+        yield event.plain_result(model_info)
 
 
 
