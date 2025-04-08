@@ -37,7 +37,7 @@ class GPTSoVITSPlugin(Star):
         }
         
         # 获取模型列表
-        self.model_list = config.get('model_list', ["ruoruo", "model2", "model3"])
+        self.model_list = config.get('model_list', ["ruoruo"])
 
     # 在发送消息前，会触发 on_decorating_result 钩子
     @filter.on_decorating_result()
@@ -76,44 +76,14 @@ class GPTSoVITSPlugin(Star):
         chain.clear() # 清空消息段
         chain.append(Record.fromFileSystem(save_path)) # 新增语音消息段
 
-    @filter.command("说")
-    async def on_say(self, event: AstrMessageEvent, send_text: str = None):
-        """说xxx，直接调用TTS，发送合成后的语音"""
-        if not send_text:
-            return
-
-        # 确保send_text是字符串类型
-        send_text = str(send_text)
-
-        # 使用简化的参数结构
-        params = {
-            "text": send_text,
-            "text_language": self.default_params["text_language"],
-            "model_name": self.default_params["model_name"]
-        }
-
-        file_name = self.generate_file_name(event, params=params)
-        save_path = await self.tts_inference(params=params, file_name=file_name)
-
-        if save_path is None:
-            logger.error("TTS任务执行失败！")
-            return
-
-        chain = [Record.fromFileSystem(save_path)]
-        yield event.chain_result(chain)
-
-    @filter.regex(r"^说\s*(.+)$")
+    @filter.regex(r"^说\s*(.+)")
     async def on_say(self, event: AstrMessageEvent):
         """说xxx，直接调用TTS，发送合成后的语音"""
         message = event.get_message_str()
-        # 提取"说"后面的内容
         send_text = message[1:].strip()  # 移除"说"并去除空白
         if not send_text:
             return
 
-        # 确保send_text是字符串类型
-        send_text = str(send_text)
-
         # 使用简化的参数结构
         params = {
             "text": send_text,
@@ -128,29 +98,6 @@ class GPTSoVITSPlugin(Star):
             logger.error("TTS任务执行失败！")
             return
 
-        chain = [Record.fromFileSystem(save_path)]
-        yield event.chain_result(chain)
-
-    @filter.command("要说", alias={"说"})
-    async def on_escape_say(self, event: AstrMessageEvent, send_text: str = None):
-        """要说xxx，直接调用TTS，发送合成后的语音"""
-        if not send_text:
-            return
-            
-        # 使用简化的参数结构
-        params = {
-            "text": send_text,
-            "text_language": self.default_params["text_language"],
-            "model_name": self.default_params["model_name"]
-        }
-        
-        file_name = self.generate_file_name(event, params=params)
-        save_path = await self.tts_inference(params=params, file_name=file_name)
-        
-        if save_path is None:
-            logger.error("TTS任务执行失败！")
-            return
-            
         chain = [Record.fromFileSystem(save_path)]
         yield event.chain_result(chain)
 
@@ -162,7 +109,6 @@ class GPTSoVITSPlugin(Star):
         limit_text = sanitized_text.strip()[:30]  # 限制长度
         file_name = f"{group_id}_{sender_id}_{limit_text}.wav"  # 固定使用wav格式
         return file_name
-
 
     async def tts_inference(self, params, file_name: str = None) -> str | None:
         """发送TTS请求，获取音频内容"""
@@ -189,7 +135,6 @@ class GPTSoVITSPlugin(Star):
         with open(save_path, 'wb') as audio_file:
             audio_file.write(audio_bytes)
         return save_path
-
 
     @filter.command("重启TTS", alias={"重启tts"})
     async def tts_control(self,event: AstrMessageEvent):
