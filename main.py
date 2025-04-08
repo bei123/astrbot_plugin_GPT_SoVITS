@@ -77,7 +77,7 @@ class GPTSoVITSPlugin(Star):
         chain.append(Record.fromFileSystem(save_path)) # 新增语音消息段
 
     @filter.command("说")
-    async def on_regex(self, event: AstrMessageEvent, send_text: str = None):
+    async def on_say(self, event: AstrMessageEvent, send_text: str = None):
         """说xxx，直接调用TTS，发送合成后的语音"""
         if not send_text:
             return
