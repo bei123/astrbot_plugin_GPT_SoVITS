@@ -203,27 +203,50 @@ class GPTSoVITSPlugin(Star):
         except Exception as e:
             logger.error(f"TTS服务重启出错: {e}")
 
-    @filter.command("model", alias={"模型"})
+    @filter.command("TTSmodel", alias={"TTS模型"})
     async def show_models(self, event: AstrMessageEvent) -> None:
-        """展示当前可用的模型列表
+        """展示当前可用的模型列表，支持切换模型
         
         Args:
             event: 消息事件对象
         """
-        if not self.model_list:
-            yield event.plain_result("当前没有配置任何模型")
+        message = event.get_message_str().strip()
+        parts = message.split(maxsplit=1)
+        
+        # 如果只输入了命令，显示模型列表
+        if len(parts) == 1:
+            if not self.model_list:
+                yield event.plain_result("当前没有配置任何模型")
+                return
+                
+            model_info = "下面列出了此服务提供商可用模型:\n"
+            for i, model in enumerate(self.model_list, 1):
+                model_info += f"{i}. {model}\n"
+                
+            current_model = self.default_params["model_name"]
+            model_info += f"当前模型: [{current_model}]\n"
+            model_info += "Tips: 使用 /model <模型名/编号>，即可实时更换模型。如目标模型不存在于上表，请输入模型名。"
+            
+            yield event.plain_result(model_info)
             return
             
-        model_info = "当前可用模型列表：\n"
-        for i, model in enumerate(self.model_list, 1):
-            model_info += f"{i}. {model}\n"
+        # 处理模型切换
+        target_model = parts[1].strip()
+        try:
+            # 尝试通过编号切换
+            model_index = int(target_model) - 1
+            if 0 <= model_index < len(self.model_list):
+                new_model = self.model_list[model_index]
+            else:
+                yield event.plain_result(f"错误：模型编号 {target_model} 不存在")
+                return
+        except ValueError:
+            # 通过模型名切换
+            new_model = target_model
             
-        if self.random_model:
-            model_info += "\n当前设置为随机选择模型"
-        else:
-            model_info += f"\n当前默认使用模型：{self.default_params['model_name']}"
-            
-        yield event.plain_result(model_info)
+        # 更新默认模型
+        self.default_params["model_name"] = new_model
+        yield event.plain_result(f"已切换到模型: [{new_model}]")
 
 
 
