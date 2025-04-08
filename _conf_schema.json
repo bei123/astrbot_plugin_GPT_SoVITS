@@ -59,18 +59,11 @@
         "description": "模型名称映射",
         "type": "object",
         "hint": "用于将用户输入的友好名称映射到实际的模型名称，可以自定义任意映射关系",
-        "items": {
-            "mappings": {
-                "description": "模型名称映射关系",
-                "type": "object",
-                "hint": "键为友好名称，值为实际模型名称。例如：{'若若': 'ruoruo', '小若': 'ruoruo'}",
-                "default": {
-                    "若若": "ruoruo",
-                    "小若": "ruoruo",
-                    "二号": "model2",
-                    "三号": "model3"
-                }
-            }
+        "default": {
+            "若若": "ruoruo",
+            "小若": "ruoruo",
+            "二号": "model2",
+            "三号": "model3"
         }
     }
 }
