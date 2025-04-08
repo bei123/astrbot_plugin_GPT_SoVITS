@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.3.2"
+PLUGIN_VERSION = "1.3.3"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -70,6 +70,26 @@ class GPTSoVITSPlugin(Star):
         
         # 模型列表
         self.model_list: List[str] = config.get('model_list', ["ruoruo"])
+        
+        # 模型名称映射
+        self.model_mapping: Dict[str, str] = config.get('model_mapping', {
+            "若若": "ruoruo",
+            "若若酱": "ruoruo",
+            "ruoruo": "ruoruo",
+            "模型2": "model2",
+            "模型3": "model3"
+        })
+
+    def _get_model_name(self, input_name: str) -> str:
+        """获取实际的模型名称
+        
+        Args:
+            input_name: 输入的模型名称
+            
+        Returns:
+            str: 实际的模型名称
+        """
+        return self.model_mapping.get(input_name, input_name)
 
     async def _generate_audio(self, text: str, event: AstrMessageEvent) -> Optional[str]:
         """生成语音文件
@@ -184,6 +204,38 @@ class GPTSoVITSPlugin(Star):
             chain = [Record.fromFileSystem(save_path)]
             yield event.chain_result(chain)
 
+    @filter.regex(r"^(.+?)说\s*(.+)")
+    async def on_say_with_model(self, event: AstrMessageEvent) -> None:
+        """处理"XXX说XXX"命令，使用指定的模型
+        
+        Args:
+            event: 消息事件对象
+        """
+        message = event.get_message_str()
+        model_name, text = message.split("说", 1)
+        model_name = model_name.strip()
+        text = text.strip()
+        
+        # 获取实际的模型名称
+        actual_model = self._get_model_name(model_name)
+        logger.info(f"将模型名称 '{model_name}' 映射为 '{actual_model}'")
+        
+        # 保存当前模型名称
+        original_model = self.default_params["model_name"]
+        
+        try:
+            # 临时设置新的模型名称
+            self.default_params["model_name"] = actual_model
+            logger.info(f"使用模型 {actual_model} 生成语音")
+            
+            save_path = await self._generate_audio(text, event)
+            if save_path:
+                chain = [Record.fromFileSystem(save_path)]
+                yield event.chain_result(chain)
+        finally:
+            # 恢复原来的模型名称
+            self.default_params["model_name"] = original_model
+
     @filter.command("重启TTS", alias={"重启tts"})
     async def tts_control(self, event: AstrMessageEvent) -> None:
         """重启TTS服务
@@ -225,7 +277,7 @@ class GPTSoVITSPlugin(Star):
                 
             current_model = self.default_params["model_name"]
             model_info += f"当前模型: [{current_model}]\n"
-            model_info += "Tips: 使用 /model <模型名/编号>，即可实时更换模型。如目标模型不存在于上表，请输入模型名。"
+            model_info += "Tips: 使用 /TTSmodel <模型名/编号>，即可实时更换模型。如目标模型不存在于上表，请输入模型名。"
             
             yield event.plain_result(model_info)
             return

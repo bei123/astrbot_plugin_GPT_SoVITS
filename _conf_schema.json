@@ -54,5 +54,17 @@
         "type": "list",
         "hint": "当random_model为True时，将从此列表中随机选择一个模型",
         "default": ["ruoruo", "model2", "model3"]
+    },
+    "model_mapping": {
+        "description": "模型名称映射",
+        "type": "object",
+        "hint": "用于将用户输入的友好名称映射到实际的模型名称",
+        "default": {
+            "若若": "ruoruo",
+            "若若酱": "ruoruo",
+            "ruoruo": "ruoruo",
+            "模型2": "model2",
+            "模型3": "model3"
+        }
     }
 }
