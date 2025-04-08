@@ -1,5 +1,6 @@
 import re
 import random
+import asyncio
 from typing import Dict, Optional, List
 
 import requests
@@ -16,11 +17,15 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.2.8"
+PLUGIN_VERSION = "1.2.9"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
 SAVED_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+
+# 锁机制相关变量
+qqbot_lock = asyncio.Lock()
+qqbot_processing = False
 
 @register(PLUGIN_NAME, PLUGIN_AUTHOR, PLUGIN_DESCRIPTION, PLUGIN_VERSION)
 class GPTSoVITSPlugin(Star):
@@ -115,7 +120,7 @@ class GPTSoVITSPlugin(Star):
             Optional[str]: 生成的音频文件路径，失败返回None
         """
         try:
-            endpoint = f"{self.base_url}/"
+            endpoint = f"{self.base_url}/qqbot"
             
             # 随机选择模型
             if self.random_model and self.model_list:
