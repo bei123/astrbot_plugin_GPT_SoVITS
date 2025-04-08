@@ -73,7 +73,7 @@
                 "default": "ruoruo"
             },
             "若若酱": {
-                "description": "若若酱的映射名称",
+                "description": "string",
                 "type": "string",
                 "default": "ruoruo"
             },
