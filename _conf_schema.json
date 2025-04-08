@@ -58,19 +58,53 @@
     "model_mapping": {
         "description": "模型名称映射",
         "type": "object",
-        "hint": "用于将用户输入的友好名称映射到实际的模型名称，格式为：{\"友好名称\": \"实际模型名称\"}",
+        "hint": "用于将用户输入的友好名称映射到实际的模型名称",
         "default": {
             "若若": "ruoruo",
             "若若酱": "ruoruo",
             "ruoruo": "ruoruo",
             "模型2": "model2",
             "模型3": "model3"
+        },
+        "items": {
+            "若若": {
+                "description": "若若的映射名称",
+                "type": "string",
+                "default": "ruoruo"
+            },
+            "若若酱": {
+                "description": "若若酱的映射名称",
+                "type": "string",
+                "default": "ruoruo"
+            },
+            "ruoruo": {
+                "description": "ruoruo的映射名称",
+                "type": "string",
+                "default": "ruoruo"
+            },
+            "模型2": {
+                "description": "模型2的映射名称",
+                "type": "string",
+                "default": "model2"
+            },
+            "模型3": {
+                "description": "模型3的映射名称",
+                "type": "string",
+                "default": "model3"
+            }
         }
     },
     "custom_model_mapping": {
         "description": "自定义模型名称映射",
         "type": "object",
-        "hint": "用户可以在这里添加自定义的模型名称映射，格式为：{\"自定义名称\": \"实际模型名称\"}",
-        "default": {}
+        "hint": "用户可以在这里添加自定义的模型名称映射",
+        "default": {},
+        "items": {
+            "string": {
+                "description": "自定义映射名称",
+                "type": "string",
+                "default": ""
+            }
+        }
     }
 }
