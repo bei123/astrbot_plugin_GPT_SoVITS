@@ -1,5 +1,6 @@
 import re
 import random
+from typing import Dict, Optional, List
 
 import requests
 from astrbot import logger
@@ -9,147 +10,195 @@ from astrbot.core import AstrBotConfig
 from astrbot.core.message.components import Record
 from astrbot.core.platform import AstrMessageEvent
 from pathlib import Path
-from typing import Dict
 from astrbot.api.provider import LLMResponse
 
-SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")  # 语音文件保存目录
+# 常量定义
+PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
+PLUGIN_AUTHOR = "Zhalslar"
+PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
+PLUGIN_VERSION = "1.1.3"
 
+# 目录配置
+SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
 SAVED_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
-
-@register("astrbot_plugin_GPT_SoVITS", "Zhalslar", "GPT_SoVITS对接插件", "1.1.3")
+@register(PLUGIN_NAME, PLUGIN_AUTHOR, PLUGIN_DESCRIPTION, PLUGIN_VERSION)
 class GPTSoVITSPlugin(Star):
+    """GPT-SoVITS插件主类
+    
+    用于将文本转换为语音，支持多个模型和随机模型选择。
+    支持通过命令触发和自动触发两种方式。
+    """
+    
     def __init__(self, context: Context, config: AstrBotConfig):
+        """初始化插件
+        
+        Args:
+            context: 插件上下文
+            config: 插件配置
+        """
         super().__init__(context)
-        base_setting = config.get('base_setting')
-        self.base_url: str = base_setting.get('base_url')
-
-        auto_config: Dict = config.get('auto_config')
-        self.send_record_probability: float = auto_config.get("send_record_probability")  # 发语音的概率
-        self.max_resp_text_len: int = auto_config.get('max_resp_text_len')
-        self.random_model: bool = auto_config.get('random_model', False)  # 是否随机选择模型
-
-        # 简化配置，只保留必要的三个参数
+        self._init_config(config)
+        
+    def _init_config(self, config: AstrBotConfig) -> None:
+        """初始化配置
+        
+        Args:
+            config: 插件配置对象
+        """
+        # 基础设置
+        base_setting = config.get('base_setting', {})
+        self.base_url: str = base_setting.get('base_url', 'http://127.0.0.1:9880')
+        
+        # 自动配置
+        auto_config: Dict = config.get('auto_config', {})
+        self.send_record_probability: float = auto_config.get("send_record_probability", 0.15)
+        self.max_resp_text_len: int = auto_config.get("max_resp_text_len", 50)
+        self.random_model: bool = auto_config.get("random_model", False)
+        
+        # TTS参数
         self.default_params = {
             "text": "",
             "text_language": config.get('text_language', "zh"),
             "model_name": config.get('model_name', "ruoruo")
         }
         
-        # 获取模型列表
-        self.model_list = config.get('model_list', ["ruoruo"])
+        # 模型列表
+        self.model_list: List[str] = config.get('model_list', ["ruoruo"])
 
-    # 在发送消息前，会触发 on_decorating_result 钩子
+    async def _generate_audio(self, text: str, event: AstrMessageEvent) -> Optional[str]:
+        """生成语音文件
+        
+        Args:
+            text: 要转换的文本
+            event: 消息事件对象
+            
+        Returns:
+            Optional[str]: 生成的音频文件路径，失败返回None
+        """
+        if not text:
+            return None
+            
+        params = {
+            "text": text,
+            "text_language": self.default_params["text_language"],
+            "model_name": self.default_params["model_name"]
+        }
+        
+        file_name = self._generate_file_name(event, text)
+        return await self._tts_inference(params, file_name)
+
+    def _generate_file_name(self, event: AstrMessageEvent, text: str) -> str:
+        """生成音频文件名
+        
+        Args:
+            event: 消息事件对象
+            text: 文本内容
+            
+        Returns:
+            str: 生成的文件名
+        """
+        group_id = event.get_group_id() or '0'
+        sender_id = event.get_sender_id() or '0'
+        sanitized_text = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff\s]', '', text)
+        limit_text = sanitized_text.strip()[:30]
+        return f"{group_id}_{sender_id}_{limit_text}.wav"
+
+    async def _tts_inference(self, params: Dict, file_name: str) -> Optional[str]:
+        """调用TTS服务生成语音
+        
+        Args:
+            params: TTS参数
+            file_name: 保存的文件名
+            
+        Returns:
+            Optional[str]: 生成的音频文件路径，失败返回None
+        """
+        try:
+            endpoint = f"{self.base_url}/"
+            
+            # 随机选择模型
+            if self.random_model and self.model_list:
+                model_name = random.choice(self.model_list)
+                logger.info(f"随机选择模型: {model_name}")
+                params["model_name"] = model_name
+            
+            # 发送请求
+            response = requests.post(endpoint, json=params)
+            response.raise_for_status()
+            
+            # 保存音频文件
+            save_path = str(SAVED_AUDIO_DIR / file_name)
+            with open(save_path, 'wb') as audio_file:
+                audio_file.write(response.content)
+            return save_path
+            
+        except requests.RequestException as e:
+            logger.error(f"TTS请求失败: {e}")
+            return None
+        except IOError as e:
+            logger.error(f"音频文件保存失败: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"TTS处理过程出错: {e}")
+            return None
+
     @filter.on_decorating_result()
-    async def on_llm_response(self, event: AstrMessageEvent):
-        """将LLM生成的文本按概率生成语音并发送"""
-        if random.random() > self.send_record_probability:  # 概率控制
+    async def on_llm_response(self, event: AstrMessageEvent) -> None:
+        """处理LLM响应，自动将文本转换为语音
+        
+        Args:
+            event: 消息事件对象
+        """
+        if random.random() > self.send_record_probability:
             return
 
         chain = event.get_result().chain
-        seg = chain[0]
-
-        # 仅允许只含有单条文本的消息链通过
-        if not (len(chain) == 1 and seg.type=='Plain'):
+        if not (len(chain) == 1 and chain[0].type == 'Plain'):
             return
 
-        resp_text = seg.text  # ai生成的文本
-
-        # 仅允许一定长度以下的文本通过
-        if len(resp_text) > self.max_resp_text_len:
+        text = chain[0].text
+        if len(text) > self.max_resp_text_len:
             return
 
-        # 使用简化的参数结构
-        params = {
-            "text": resp_text,
-            "text_language": self.default_params["text_language"],
-            "model_name": self.default_params["model_name"]
-        }
-
-        file_name = self.generate_file_name(event, params=params) # 生成文件名
-        save_path = await self.tts_inference(params=params, file_name=file_name)  # 生成语音
-
-        if save_path is None:
-            logger.error("TTS任务执行失败！")
-            return
-
-        chain.clear() # 清空消息段
-        chain.append(Record.fromFileSystem(save_path)) # 新增语音消息段
+        save_path = await self._generate_audio(text, event)
+        if save_path:
+            chain.clear()
+            chain.append(Record.fromFileSystem(save_path))
 
     @filter.regex(r"^说\s*(.+)")
-    async def on_say(self, event: AstrMessageEvent):
-        """说xxx，直接调用TTS，发送合成后的语音"""
+    async def on_say(self, event: AstrMessageEvent) -> None:
+        """处理"说xxx"命令
+        
+        Args:
+            event: 消息事件对象
+        """
         message = event.get_message_str()
-        send_text = message[1:].strip()  # 移除"说"并去除空白
-        if not send_text:
-            return
-
-        # 使用简化的参数结构
-        params = {
-            "text": send_text,
-            "text_language": self.default_params["text_language"],
-            "model_name": self.default_params["model_name"]
-        }
-
-        file_name = self.generate_file_name(event, params=params)
-        save_path = await self.tts_inference(params=params, file_name=file_name)
-
-        if save_path is None:
-            logger.error("TTS任务执行失败！")
-            return
-
-        chain = [Record.fromFileSystem(save_path)]
-        yield event.chain_result(chain)
-
-    def generate_file_name(self,event: AstrMessageEvent, params) -> str:
-        """生成文件名"""
-        group_id = event.get_group_id() or '0'
-        sender_id = event.get_sender_id() or '0'
-        sanitized_text = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff\s]', '', params["text"])
-        limit_text = sanitized_text.strip()[:30]  # 限制长度
-        file_name = f"{group_id}_{sender_id}_{limit_text}.wav"  # 固定使用wav格式
-        return file_name
-
-    async def tts_inference(self, params, file_name: str = None) -> str | None:
-        """发送TTS请求，获取音频内容"""
-        endpoint = f"{self.base_url}/"
+        text = message[1:].strip()
         
-        # 如果启用了随机模型功能，从模型列表中随机选择一个模型
-        model_name = params.get("model_name", "ruoruo")
-        if self.random_model and self.model_list:
-            model_name = random.choice(self.model_list)
-            logger.info(f"随机选择模型: {model_name}")
-        
-        # 准备JSON数据
-        json_data = {
-            "text": params.get("text", ""),
-            "text_language": params.get("text_language", "zh"),
-            "model_name": model_name
-        }
-        # 使用POST请求发送JSON数据
-        response = requests.post(endpoint, json=json_data)
-        if response.status_code != 200:
-            return None
-        audio_bytes: bytes = response.content
-        save_path = str(SAVED_AUDIO_DIR / file_name)
-        with open(save_path, 'wb') as audio_file:
-            audio_file.write(audio_bytes)
-        return save_path
+        save_path = await self._generate_audio(text, event)
+        if save_path:
+            chain = [Record.fromFileSystem(save_path)]
+            yield event.chain_result(chain)
 
     @filter.command("重启TTS", alias={"重启tts"})
-    async def tts_control(self,event: AstrMessageEvent):
-        """重启TTS服务"""
-        yield event.plain_result(f"重启TTS中...(报错信息请忽略，等待一会即可完成重启)")
-        endpoint = f"{self.base_url}/control"
-        params = {"command": "restart"}
+    async def tts_control(self, event: AstrMessageEvent) -> None:
+        """重启TTS服务
+        
+        Args:
+            event: 消息事件对象
+        """
+        yield event.plain_result("重启TTS中...(报错信息请忽略，等待一会即可完成重启)")
+        
         try:
-            response = requests.get(endpoint, params=params)
-            if response.status_code == 200:
-                logger.info("TTS服务重启成功")
-            else:
-                logger.error(f"TTS服务重启失败，状态码：{response.status_code}")
+            endpoint = f"{self.base_url}/control"
+            response = requests.get(endpoint, params={"command": "restart"})
+            response.raise_for_status()
+            logger.info("TTS服务重启成功")
+        except requests.RequestException as e:
+            logger.error(f"TTS服务重启失败: {e}")
         except Exception as e:
-            logger.error(f"TTS服务重启出错：{e}")
+            logger.error(f"TTS服务重启出错: {e}")
 
 
 
