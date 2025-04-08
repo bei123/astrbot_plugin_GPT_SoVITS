@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.2.9"
+PLUGIN_VERSION = "1.3.0"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -120,16 +120,14 @@ class GPTSoVITSPlugin(Star):
             Optional[str]: 生成的音频文件路径，失败返回None
         """
         try:
-            endpoint = f"{self.base_url}/qqbot"
-            
             # 随机选择模型
             if self.random_model and self.model_list:
                 model_name = random.choice(self.model_list)
                 logger.info(f"随机选择模型: {model_name}")
                 params["model_name"] = model_name
             
-            # 发送请求
-            response = requests.post(endpoint, json=params)
+            # 发送请求到后端
+            response = requests.post(self.base_url, json=params)
             response.raise_for_status()
             
             # 保存音频文件
