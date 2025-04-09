@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.4.0"
+PLUGIN_VERSION = "1.4.1"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -116,6 +116,12 @@ class GPTSoVITSPlugin(Star):
             "model_name": self.default_params["model_name"]
         }
         
+        # 只有在没有指定模型的情况下才随机选择
+        if self.random_model and self.model_list and params["model_name"] == self.default_params["model_name"]:
+            model_name = random.choice(self.model_list)
+            logger.info(f"随机选择模型: {model_name}")
+            params["model_name"] = model_name
+            
         file_name = self._generate_file_name(event, filtered_text)
         return await self._tts_inference(params, file_name)
 
@@ -146,12 +152,6 @@ class GPTSoVITSPlugin(Star):
             Optional[str]: 生成的音频文件路径，失败返回None
         """
         try:
-            # 随机选择模型
-            if self.random_model and self.model_list:
-                model_name = random.choice(self.model_list)
-                logger.info(f"随机选择模型: {model_name}")
-                params["model_name"] = model_name
-            
             # 发送请求到后端
             response = requests.post(self.base_url, json=params)
             response.raise_for_status()
