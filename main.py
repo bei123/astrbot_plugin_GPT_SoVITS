@@ -191,30 +191,30 @@ class GPTSoVITSPlugin(Star):
             chain.clear()
             chain.append(Record.fromFileSystem(save_path))
 
-    @filter.regex(r"^说\s*(.+)")
+    @filter.regex(r"^{trigger_word}\s*(.+)$")
     async def on_say(self, event: AstrMessageEvent) -> None:
-        """处理"说xxx"命令
+        """处理"{trigger_word} xxx"命令
         
         Args:
             event: 消息事件对象
         """
         message = event.get_message_str()
-        text = message[1:].strip()
+        text = message[len(self.trigger_word):].strip()
         
         save_path = await self._generate_audio(text, event)
         if save_path:
             chain = [Record.fromFileSystem(save_path)]
             yield event.chain_result(chain)
 
-    @filter.regex(r"^(.+?){trigger_word}\s*(.+)")
+    @filter.regex(r"^(.+?)\s*说\s*(.+)$")
     async def on_say_with_model(self, event: AstrMessageEvent) -> None:
-        """处理"XXX{trigger_word}XXX"命令，使用指定的模型
+        """处理"XXX说XXX"命令，使用指定的模型
         
         Args:
             event: 消息事件对象
         """
         message = event.get_message_str()
-        model_name, text = message.split(self.trigger_word, 1)
+        model_name, text = message.split("说", 1)
         model_name = model_name.strip()
         text = text.strip()
         
