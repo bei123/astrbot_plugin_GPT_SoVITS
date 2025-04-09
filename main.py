@@ -43,6 +43,7 @@ class GPTSoVITSPlugin(Star):
             config: 插件配置
         """
         super().__init__(context)
+        self.config = config
         self._init_config(config)
         
     def _init_config(self, config: AstrBotConfig) -> None:
