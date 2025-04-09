@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.3.7"
+PLUGIN_VERSION = "1.3.8"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -78,7 +78,9 @@ class GPTSoVITSPlugin(Star):
             "欣小萌": "xinxiaomeng",
             "杨幂": "yangmi"
         }
-
+        
+        # 触发词配置
+        self.trigger_word: str = config.get('trigger_word', "说")
 
     def _get_model_name(self, input_name: str) -> str:
         """获取实际的模型名称
@@ -204,15 +206,15 @@ class GPTSoVITSPlugin(Star):
             chain = [Record.fromFileSystem(save_path)]
             yield event.chain_result(chain)
 
-    @filter.regex(r"^(.+?)说\s*(.+)")
+    @filter.regex(r"^(.+?){trigger_word}\s*(.+)")
     async def on_say_with_model(self, event: AstrMessageEvent) -> None:
-        """处理"XXX说XXX"命令，使用指定的模型
+        """处理"XXX{trigger_word}XXX"命令，使用指定的模型
         
         Args:
             event: 消息事件对象
         """
         message = event.get_message_str()
-        model_name, text = message.split("说", 1)
+        model_name, text = message.split(self.trigger_word, 1)
         model_name = model_name.strip()
         text = text.strip()
         

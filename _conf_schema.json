@@ -54,6 +54,11 @@
         "type": "list",
         "hint": "当random_model为True时，将从此列表中随机选择一个模型",
         "default": ["ruoruo", "model2", "model3"]
+    },
+    "trigger_word": {
+        "description": "触发词",
+        "type": "string",
+        "hint": "用于触发语音生成的命令词，默认为'说'",
+        "default": "说"
     }
-    
 }
