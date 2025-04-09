@@ -9,6 +9,12 @@
                 "type": "string",
                 "hint": "必填！GPT_SoVITS官方整合包默认为http://127.0.0.1:9880，第三方整合包可能不同",
                 "default": "http://autodl.2000gallery.art:9646/qqbot"
+            },
+            "command_prefix": {
+                "description": "语音转换命令前缀",
+                "type": "string",
+                "hint": "触发语音转换的命令前缀，默认为'说'",
+                "default": "说"
             }
         }
     },
@@ -54,11 +60,5 @@
         "type": "list",
         "hint": "当random_model为True时，将从此列表中随机选择一个模型",
         "default": ["ruoruo", "model2", "model3"]
-    },
-    "trigger_word": {
-        "description": "触发词",
-        "type": "string",
-        "hint": "用于触发语音生成的命令词，默认为'说'",
-        "default": "说"
     }
 }

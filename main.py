@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.3.8"
+PLUGIN_VERSION = "1.3.9"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -78,9 +78,7 @@ class GPTSoVITSPlugin(Star):
             "欣小萌": "xinxiaomeng",
             "杨幂": "yangmi"
         }
-        
-        # 触发词配置
-        self.trigger_word: str = config.get('trigger_word')
+
 
     def _get_model_name(self, input_name: str) -> str:
         """获取实际的模型名称
@@ -191,31 +189,34 @@ class GPTSoVITSPlugin(Star):
             chain.clear()
             chain.append(Record.fromFileSystem(save_path))
 
-    
-    @filter.regex(r"^(.+?){trigger_word}\s*(.+)")
+    @filter.regex(r"^(.+?)\s*(.+)")
     async def on_say(self, event: AstrMessageEvent) -> None:
-        """处理"说xxx"命令
+        """处理语音转换命令
         
         Args:
             event: 消息事件对象
         """
         message = event.get_message_str()
-        text = message[1:].strip()
+        prefix = self.config.base_setting.command_prefix
+        if not message.startswith(prefix):
+            return
+            
+        text = message[len(prefix):].strip()
         
         save_path = await self._generate_audio(text, event)
         if save_path:
             chain = [Record.fromFileSystem(save_path)]
             yield event.chain_result(chain)
 
-    @filter.regex(r"^说\s*(.+)")
+    @filter.regex(r"^(.+?)说\s*(.+)")
     async def on_say_with_model(self, event: AstrMessageEvent) -> None:
-        """处理"XXX{trigger_word}XXX"命令，使用指定的模型
+        """处理"XXX说XXX"命令，使用指定的模型
         
         Args:
             event: 消息事件对象
         """
         message = event.get_message_str()
-        model_name, text = message.split(self.trigger_word, 1)
+        model_name, text = message.split("说", 1)
         model_name = model_name.strip()
         text = text.strip()
         
@@ -302,7 +303,6 @@ class GPTSoVITSPlugin(Star):
         # 更新默认模型
         self.default_params["model_name"] = new_model
         yield event.plain_result(f"已切换到模型: [{new_model}]")
-
 
 
 
