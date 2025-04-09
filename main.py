@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.3.9"
+PLUGIN_VERSION = "1.4.0"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -104,13 +104,18 @@ class GPTSoVITSPlugin(Star):
         if not text:
             return None
             
+        # 只保留中文、英文、逗号、句号和感叹号
+        filtered_text = re.sub(r'[^\u4e00-\u9fa5a-zA-Z,。!]', '', text)
+        if not filtered_text:
+            return None
+            
         params = {
-            "text": text,
+            "text": filtered_text,
             "text_language": self.default_params["text_language"],
             "model_name": self.default_params["model_name"]
         }
         
-        file_name = self._generate_file_name(event, text)
+        file_name = self._generate_file_name(event, filtered_text)
         return await self._tts_inference(params, file_name)
 
     def _generate_file_name(self, event: AstrMessageEvent, text: str) -> str:
