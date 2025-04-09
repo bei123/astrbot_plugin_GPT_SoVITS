@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.4.1"
+PLUGIN_VERSION = "1.4.2"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -204,6 +204,11 @@ class GPTSoVITSPlugin(Star):
         """
         message = event.get_message_str()
         prefix = self.config.get('base_setting', {}).get('command_prefix', '说')
+        
+        # 检查是否是"XX说XXX"格式
+        if "说" in message and message.split("说")[0].strip() in self.model_mapping:
+            return
+            
         if not message.startswith(prefix):
             return
             
@@ -225,6 +230,10 @@ class GPTSoVITSPlugin(Star):
         model_name, text = message.split("说", 1)
         model_name = model_name.strip()
         text = text.strip()
+        
+        # 如果模型名不在映射中，则返回
+        if model_name not in self.model_mapping:
+            return
         
         # 获取实际的模型名称
         actual_model = self._get_model_name(model_name)
