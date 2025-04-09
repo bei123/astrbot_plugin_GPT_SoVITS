@@ -75,7 +75,7 @@ class GPTSoVITSPlugin(Star):
         # 模型名称映射（硬编码）
         self.model_mapping: Dict[str, str] = {
             "若若": "ruoruo",
-            "步非烟": "bufeiyanyan",
+            "步非烟": "bufeiyan",
             "欣小萌": "xinxiaomeng",
             "杨幂": "yangmi"
         }
