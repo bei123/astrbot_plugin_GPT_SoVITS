@@ -203,7 +203,7 @@ class GPTSoVITSPlugin(Star):
             event: 消息事件对象
         """
         message = event.get_message_str()
-        prefix = self.config.base_setting.command_prefix
+        prefix = self.config.get('base_setting', {}).get('command_prefix', '说')
         if not message.startswith(prefix):
             return
             
