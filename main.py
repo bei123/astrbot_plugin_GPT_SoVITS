@@ -17,7 +17,7 @@ from astrbot.api.provider import LLMResponse
 PLUGIN_NAME = "astrbot_plugin_GPT_SoVITS"
 PLUGIN_AUTHOR = "Zhalslar"
 PLUGIN_DESCRIPTION = "GPT_SoVITS对接插件"
-PLUGIN_VERSION = "1.4.2"
+PLUGIN_VERSION = "1.4.3"
 
 # 目录配置
 SAVED_AUDIO_DIR = Path("./data/plugins_data/astrbot_plugin_GPT_SoVITS")
@@ -105,8 +105,8 @@ class GPTSoVITSPlugin(Star):
         if not text:
             return None
             
-        # 只保留中文、英文、逗号、句号和感叹号
-        filtered_text = re.sub(r'[^\u4e00-\u9fa5a-zA-Z,。!]', '', text)
+        # 只保留中文、英文、日语以及中英文标点符号
+        filtered_text = re.sub(r'[^\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FFa-zA-Z,，.。!！]', '', text)
         if not filtered_text:
             return None
             
