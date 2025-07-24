@@ -92,28 +92,28 @@ class GPTSoVITSPlugin(Star):
         """
         return self.model_mapping.get(input_name, input_name)
 
-    async def _generate_audio(self, text: str, event: AstrMessageEvent) -> Optional[str]:
+    async def _generate_audio(self, text: str, event: AstrMessageEvent, model_name: str = None) -> Optional[str]:
         """生成语音文件
         
         Args:
             text: 要转换的文本
             event: 消息事件对象
-            
+            model_name: 指定的模型名称（可选）
         Returns:
             Optional[str]: 生成的音频文件路径，失败返回None
         """
         if not text:
             return None
-            
+        
         # 只保留中文、英文、日语以及中英文标点符号
-        filtered_text = re.sub(r'[^\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FFa-zA-Z,，.。!！]', '', text)
+        filtered_text = re.sub(r'[^ -\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF,，.。!！]', '', text)
         if not filtered_text:
             return None
-            
+        
         params = {
             "text": filtered_text,
             "text_language": self.default_params["text_language"],
-            "model_name": self.default_params["model_name"]
+            "model_name": model_name or self.default_params["model_name"]
         }
         
         # 只有在没有指定模型的情况下才随机选择
@@ -121,25 +121,19 @@ class GPTSoVITSPlugin(Star):
             model_name = random.choice(self.model_list)
             logger.info(f"随机选择模型: {model_name}")
             params["model_name"] = model_name
-            
+        
         file_name = self._generate_file_name(event, filtered_text)
         return await self._tts_inference(params, file_name)
 
     def _generate_file_name(self, event: AstrMessageEvent, text: str) -> str:
-        """生成音频文件名
-        
-        Args:
-            event: 消息事件对象
-            text: 文本内容
-            
-        Returns:
-            str: 生成的文件名
-        """
+        import hashlib
         group_id = event.get_group_id() or '0'
         sender_id = event.get_sender_id() or '0'
-        sanitized_text = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff\s]', '', text)
-        limit_text = sanitized_text.strip()[:30]
-        return f"{group_id}_{sender_id}_{limit_text}.wav"
+        # Remove all non-alphanumeric and CJK characters, no spaces
+        sanitized_text = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff]', '', text)
+        # Use a hash for uniqueness and safety
+        text_hash = hashlib.md5(text.encode('utf-8')).hexdigest()[:8]
+        return f"{group_id}_{sender_id}_{text_hash}.wav"
 
     async def _tts_inference(self, params: Dict, file_name: str) -> Optional[str]:
         """调用TTS服务生成语音
@@ -147,27 +141,18 @@ class GPTSoVITSPlugin(Star):
         Args:
             params: TTS参数
             file_name: 保存的文件名
-            
         Returns:
             Optional[str]: 生成的音频文件路径，失败返回None
         """
         try:
-            # 发送请求到后端
-            response = requests.post(self.base_url, json=params)
-            response.raise_for_status()
-            
-            # 保存音频文件
-            save_path = str(SAVED_AUDIO_DIR / file_name)
-            with open(save_path, 'wb') as audio_file:
-                audio_file.write(response.content)
+            import httpx
+            async with httpx.AsyncClient() as client:
+                response = await client.post(self.base_url, json=params)
+                response.raise_for_status()
+                save_path = str(SAVED_AUDIO_DIR / file_name)
+                with open(save_path, 'wb') as audio_file:
+                    audio_file.write(response.content)
             return save_path
-            
-        except requests.RequestException as e:
-            logger.error(f"TTS请求失败: {e}")
-            return None
-        except IOError as e:
-            logger.error(f"音频文件保存失败: {e}")
-            return None
         except Exception as e:
             logger.error(f"TTS处理过程出错: {e}")
             return None
@@ -247,7 +232,7 @@ class GPTSoVITSPlugin(Star):
             self.default_params["model_name"] = actual_model
             logger.info(f"使用模型 {actual_model} 生成语音")
             
-            save_path = await self._generate_audio(text, event)
+            save_path = await self._generate_audio(text, event, model_name=actual_model)
             if save_path:
                 chain = [Record.fromFileSystem(save_path)]
                 yield event.chain_result(chain)
@@ -265,12 +250,12 @@ class GPTSoVITSPlugin(Star):
         yield event.plain_result("重启TTS中...(报错信息请忽略，等待一会即可完成重启)")
         
         try:
+            import httpx
             endpoint = f"{self.base_url}/control"
-            response = requests.get(endpoint, params={"command": "restart"})
-            response.raise_for_status()
+            async with httpx.AsyncClient() as client:
+                response = await client.get(endpoint, params={"command": "restart"})
+                response.raise_for_status()
             logger.info("TTS服务重启成功")
-        except requests.RequestException as e:
-            logger.error(f"TTS服务重启失败: {e}")
         except Exception as e:
             logger.error(f"TTS服务重启出错: {e}")
 
