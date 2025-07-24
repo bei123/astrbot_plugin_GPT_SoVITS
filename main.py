@@ -158,7 +158,7 @@ class GPTSoVITSPlugin(Star):
             return None
 
     @filter.on_decorating_result()
-    async def on_llm_response(self, event: AstrMessageEvent) -> None:
+    async def on_llm_response(self, event: AstrMessageEvent, *args, **kwargs) -> None:
         """处理LLM响应，自动将文本转换为语音
         
         Args:
@@ -181,7 +181,7 @@ class GPTSoVITSPlugin(Star):
             chain.append(Record.fromFileSystem(save_path))
 
     @filter.regex(r"^(.+?)\s*(.+)")
-    async def on_say(self, event: AstrMessageEvent) -> None:
+    async def on_say(self, event: AstrMessageEvent, *args, **kwargs) -> None:
         """处理语音转换命令
         
         Args:
@@ -205,7 +205,7 @@ class GPTSoVITSPlugin(Star):
             yield event.chain_result(chain)
 
     @filter.regex(r"^(.+?)说\s*(.+)")
-    async def on_say_with_model(self, event: AstrMessageEvent) -> None:
+    async def on_say_with_model(self, event: AstrMessageEvent, *args, **kwargs) -> None:
         """处理"XXX说XXX"命令，使用指定的模型
         
         Args:
@@ -241,7 +241,7 @@ class GPTSoVITSPlugin(Star):
             self.default_params["model_name"] = original_model
 
     @filter.command("重启TTS", alias={"重启tts"})
-    async def tts_control(self, event: AstrMessageEvent) -> None:
+    async def tts_control(self, event: AstrMessageEvent, *args, **kwargs) -> None:
         """重启TTS服务
         
         Args:
@@ -260,7 +260,7 @@ class GPTSoVITSPlugin(Star):
             logger.error(f"TTS服务重启出错: {e}")
 
     @filter.command("TTSmodel", alias={"TTS模型"})
-    async def show_models(self, event: AstrMessageEvent) -> None:
+    async def show_models(self, event: AstrMessageEvent, *args, **kwargs) -> None:
         """展示当前可用的模型列表，支持切换模型
         
         Args:
