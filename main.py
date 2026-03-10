@@ -7,6 +7,8 @@ from astrbot.api.star import Context, Star
 from astrbot.core import AstrBotConfig
 from astrbot.core.message.components import Plain, Record
 from astrbot.core.platform import AstrMessageEvent
+from astrbot.core.star.filter.command import CommandFilter
+from astrbot.core.star.star_handler import star_handlers_registry
 
 from .core.client import GSVApiClient, GSVRequestResult
 from .core.config import PluginConfig
@@ -29,9 +31,33 @@ class GPTSoVITSPlugin(Star):
     async def initialize(self):
         if self.cfg.enabled:
             await self.service.load_model()
+        # 根据配置替换「说」命令的词与别名
+        cmd = (self.cfg.client.say_command or "说").strip() or "说"
+        aliases_str = self.cfg.client.say_command_aliases or "gsv,GSV"
+        aliases = [a.strip() for a in str(aliases_str).split(",") if a.strip()]
+        for handler in star_handlers_registry.get_handlers_by_module_name(
+            self.__class__.__module__
+        ):
+            if handler.handler_name == "on_command":
+                for i, f in enumerate(handler.event_filters):
+                    if isinstance(f, CommandFilter):
+                        handler.event_filters[i] = CommandFilter(
+                            cmd, alias=set(aliases), handler_md=handler
+                        )
+                        logger.info(
+                            f"TTS 命令已设为: {cmd}"
+                            + (f", 别名: {aliases}" if aliases else "")
+                        )
+                        break
+                break
 
     async def terminate(self):
         await self.client.close()
+
+    def _use_qqbot(self) -> bool:
+        """使用 QQ 机器人专用接口时不启用情绪相关功能"""
+        endpoint = (self.cfg.client.tts_endpoint or "/tts").strip() or "/tts"
+        return endpoint.rstrip("/").endswith("/qqbot")
 
     @staticmethod
     def _to_record(res: GSVRequestResult) -> Record:
@@ -100,7 +126,7 @@ class GPTSoVITSPlugin(Star):
         if len(combined_text) > cfg.max_msg_len:
             return
 
-        params = await self._get_emotion_params(event, combined_text)
+        params = None if self._use_qqbot() else await self._get_emotion_params(event, combined_text)
         res = await self.service.inference(combined_text, extra_params=params)
         if not bool(res):
             return
@@ -138,7 +164,7 @@ class GPTSoVITSPlugin(Star):
             message(string): 要讲的话
         """
         try:
-            params = await self._get_emotion_params(event, message)
+            params = None if self._use_qqbot() else await self._get_emotion_params(event, message)
             res = await self.service.inference(message, extra_params=params)
             if not bool(res):
                 return res.error

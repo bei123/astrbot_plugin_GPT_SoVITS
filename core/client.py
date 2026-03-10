@@ -41,7 +41,11 @@ class GSVApiClient:
         self.gpt_url = f"{self.base_url}/set_gpt_weights"
         self.sovits_url = f"{self.base_url}/set_sovits_weights"
         self.control_url = f"{self.base_url}/control"
-        self.tts_url = f"{self.base_url}/tts"
+        endpoint = (self.cfg.tts_endpoint or "/tts").strip() or "/tts"
+        if not endpoint.startswith("/"):
+            endpoint = "/" + endpoint
+        self.tts_url = f"{self.base_url}{endpoint}"
+        self._use_qqbot = endpoint.rstrip("/").endswith("/qqbot")
 
         self.session = ClientSession(timeout=ClientTimeout(total=self.cfg.timeout))
 
@@ -87,6 +91,36 @@ class GSVApiClient:
             logger.exception(f"[HTTP] 未知异常: {url}")
             return GSVRequestResult(False, error=str(e), text=request_text)
 
+    async def _request_post_json(
+        self,
+        url: str,
+        *,
+        json_body: dict,
+    ) -> GSVRequestResult:
+        """POST 请求，JSON body（用于 /qqbot 等接口）"""
+        request_text = str(json_body.get("text", ""))
+
+        try:
+            async with self.session.post(url, json=json_body) as resp:
+                if resp.status != 200:
+                    detail = await resp.text()
+                    return GSVRequestResult(
+                        ok=False,
+                        error=f"HTTP {resp.status}: {detail}",
+                        text=request_text,
+                    )
+                return GSVRequestResult(
+                    ok=True,
+                    data=await resp.read(),
+                    text=request_text,
+                )
+        except ClientError as e:
+            logger.error(f"[HTTP] POST 请求失败: {url} | {e}")
+            return GSVRequestResult(False, error=str(e), text=request_text)
+        except Exception as e:
+            logger.exception(f"[HTTP] POST 未知异常: {url}")
+            return GSVRequestResult(False, error=str(e), text=request_text)
+
     async def set_gpt_weights(self, path: str) -> GSVRequestResult:
         return await self._request(
             self.gpt_url,
@@ -100,6 +134,14 @@ class GSVApiClient:
         )
 
     async def tts(self, params: dict) -> GSVRequestResult:
+        if self._use_qqbot:
+            # 上游 QQ 机器人专用接口：POST /qqbot，JSON: text, text_language, model_name
+            body = {
+                "text": params.get("text", ""),
+                "text_language": params.get("text_language") or params.get("text_lang", "zh"),
+                "model_name": params.get("model_name", ""),
+            }
+            return await self._request_post_json(self.tts_url, json_body=body)
         return await self._request(
             self.tts_url,
             params=params,

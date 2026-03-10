@@ -61,24 +61,42 @@
                     "step": 1
                 },
                 "default": 60
+            },
+            "tts_endpoint": {
+                "description": "TTS 请求路径",
+                "type": "string",
+                "hint": "官方接口填 /tts（GET）；若上游为 QQ 机器人专用接口则填 /qqbot（POST JSON：text, text_language, model_name）",
+                "default": "/tts"
+            },
+            "say_command": {
+                "description": "TTS 命令词",
+                "type": "string",
+                "hint": "用于触发「命令 + 内容」合成语音，如填「说」则使用「说 你好」",
+                "default": "说"
+            },
+            "say_command_aliases": {
+                "description": "TTS 命令别名",
+                "type": "string",
+                "hint": "逗号分隔，如 gsv,GSV，与命令词等效",
+                "default": "gsv,GSV"
             }
         }
     },
     "model": {
         "description": "模型配置",
         "type": "object",
-        "hint": "",
+        "hint": "使用 QQ 机器人专用接口 (TTS 请求路径填 /qqbot) 时无需填写以下路径，由上游服务管理模型",
         "items": {
             "gpt_path": {
                 "description": "GPT模型文件路径",
                 "type": "string",
-                "hint": "即“.ckpt”后缀的文件。支持绝对路径和相对路径，拼接时请使用“/”, 不填则默认用GPT_SoVITS内置的GPT模型",
+                "hint": "即“.ckpt”后缀的文件。使用 /qqbot 接口时可不填；否则不填则用 GPT_SoVITS 内置模型",
                 "default": ""
             },
             "sovits_path": {
                 "description": "SoVITS模型文件路径",
                 "type": "string",
-                "hint": "即“.pth”后缀的文件。支持绝对路径和相对路径，拼接时请使用“/”, 不填则默认用GPT_SoVITS内置的SoVITS模型",
+                "hint": "即“.pth”后缀的文件。使用 /qqbot 接口时可不填；否则不填则用 GPT_SoVITS 内置模型",
                 "default": ""
             }
         }
@@ -86,18 +104,18 @@
     "default_params": {
         "description": "TTS默认参数",
         "type": "object",
-        "hint": "这些参数将用于每次语音合成请求，可根据需要调整",
+        "hint": "使用 /qqbot 接口时请在配置中填写：文本语言(text_lang)、model_name（text 由消息内容提供）。使用 /tts 时其余参数生效",
         "items": {
             "text": {
                 "description": "要转换为语音的文本",
                 "type": "string",
-                "hint": "支持任意语言，但需与 text_lang 匹配",
-                "default": "你要干嘛？"
+                "hint": "默认占位；实际合成时由消息内容填入。使用 /qqbot 时此字段会提交",
+                "default": ""
             },
             "text_lang": {
                 "description": "文本语言",
                 "type": "string",
-                "hint": "要转化的文本的语言",
+                "hint": "要转化的文本的语言。使用 /qqbot 时必填，会以 text_language 提交",
                 "options": [
                     "zh",
                     "en",
@@ -112,22 +130,28 @@
                 ],
                 "default": "zh"
             },
+            "model_name": {
+                "description": "模型名称",
+                "type": "string",
+                "hint": "使用 /qqbot 接口时必填，与上游约定的模型名一致",
+                "default": ""
+            },
             "ref_audio_path": {
                 "description": "参考音频路径",
                 "type": "string",
-                "hint": "用于音色克隆，支持 wav 格式，必填！",
-                "default": "data/plugins/astrbot_plugin_GPT_SoVITS/default_audio/就算是这样，也不至于直接碎掉啊，除非.wav"
+                "hint": "用于音色克隆，支持 wav 格式。使用 /qqbot 接口时可不填",
+                "default": ""
             },
             "prompt_text": {
                 "description": "参考音频对应的文本",
                 "type": "string",
-                "hint": "用于对齐音色与内容，建议填写",
+                "hint": "用于对齐音色与内容。使用 /qqbot 接口时不生效",
                 "default": "就算是这样，也不至于直接碎掉啊，除非"
             },
             "prompt_lang": {
                 "description": "参考音频文本语言",
                 "type": "string",
-                "hint": "尽量与 prompt_text 语言一致",
+                "hint": "尽量与 prompt_text 语言一致。使用 /qqbot 接口时不生效",
                 "options": [
                     "zh",
                     "en",
@@ -145,7 +169,7 @@
             "top_k": {
                 "description": "Top-K 采样",
                 "type": "int",
-                "hint": "控制生成语音的多样性，值越大越多样",
+                "hint": "采样参数，控制随机性与稳定性。使用 /qqbot 接口时不生效",
                 "slider": {
                     "min": 1,
                     "max": 20,
@@ -156,7 +180,7 @@
             "top_p": {
                 "description": "Top-P 核采样",
                 "type": "float",
-                "hint": "控制采样范围，1.0 表示不限制",
+                "hint": "采样参数。使用 /qqbot 接口时不生效",
                 "slider": {
                     "min": 0.1,
                     "max": 1.0,
@@ -167,7 +191,7 @@
             "temperature": {
                 "description": "采样温度",
                 "type": "float",
-                "hint": "控制随机性，1.0 为原始分布，越低越保守",
+                "hint": "采样参数。使用 /qqbot 接口时不生效",
                 "slider": {
                     "min": 0.1,
                     "max": 2.0,
@@ -178,7 +202,7 @@
             "text_split_method": {
                 "description": "文本切分方式",
                 "type": "string",
-                "hint": "影响长文本处理效果",
+                "hint": "长文本与性能相关，按显存与效果微调。使用 /qqbot 接口时不生效",
                 "options": [
                     "cut0",
                     "cut1",
@@ -200,7 +224,7 @@
             "batch_size": {
                 "description": "推理批大小",
                 "type": "int",
-                "hint": "越大越快但越占显存",
+                "hint": "长文本与性能相关。使用 /qqbot 接口时不生效",
                 "slider": {
                     "min": 1,
                     "max": 5,
@@ -211,7 +235,7 @@
             "batch_threshold": {
                 "description": "批处理阈值",
                 "type": "float",
-                "hint": "控制是否拆分批次",
+                "hint": "长文本与性能相关。使用 /qqbot 接口时不生效",
                 "slider": {
                     "min": 0.1,
                     "max": 1.0,
@@ -222,13 +246,13 @@
             "split_bucket": {
                 "description": "启用分桶推理",
                 "type": "bool",
-                "hint": "开启后可并行处理长文本，建议开启",
+                "hint": "长文本与性能相关。使用 /qqbot 接口时不生效",
                 "default": true
             },
             "speed_factor": {
-                "description": "语速倍数",
+                "description": "语速倍率",
                 "type": "float",
-                "hint": "1.0 为原速",
+                "hint": "1.0 为原速。使用 /qqbot 接口时不生效",
                 "slider": {
                     "min": 0.5,
                     "max": 2.0,
@@ -237,9 +261,9 @@
                 "default": 1.0
             },
             "fragment_interval": {
-                "description": "语音片段间隔",
+                "description": "语句片段间隔(秒)",
                 "type": "float",
-                "hint": "单位：秒，影响停顿感",
+                "hint": "值越小节奏越紧凑。使用 /qqbot 接口时不生效",
                 "slider": {
                     "min": 0.1,
                     "max": 1.0,
@@ -250,25 +274,25 @@
             "streaming_mode": {
                 "description": "启用流式返回",
                 "type": "bool",
-                "hint": "开启后逐步返回音频流，适合长文本",
+                "hint": "长文本与性能相关。使用 /qqbot 接口时不生效",
                 "default": false
             },
             "seed": {
                 "description": "随机种子",
                 "type": "int",
-                "hint": "-1 为随机，设定后可复现结果",
+                "hint": "-1 为随机。使用 /qqbot 接口时不生效",
                 "default": -1
             },
             "parallel_infer": {
                 "description": "启用并行推理",
                 "type": "bool",
-                "hint": "开启后可提升速度，建议开启",
+                "hint": "长文本与性能相关。使用 /qqbot 接口时不生效",
                 "default": true
             },
             "repetition_penalty": {
                 "description": "重复惩罚系数",
                 "type": "float",
-                "hint": "越高越不容易重复",
+                "hint": "越高越不容易重复。使用 /qqbot 接口时不生效",
                 "slider": {
                     "min": 1.0,
                     "max": 3.0,
@@ -279,7 +303,7 @@
             "media_type": {
                 "description": "输出音频格式",
                 "type": "string",
-                "hint": "建议 wav，兼容性好",
+                "hint": "wav/mp3/ogg，建议 wav。使用 /qqbot 接口时不生效",
                 "options": [
                     "wav",
                     "mp3",
@@ -290,21 +314,21 @@
         }
     },
     "judge": {
-        "description": "LLM 配置",
-        "hint": "",
+        "description": "LLM 配置（情绪判断）",
+        "hint": "使用 /qqbot 接口时情绪功能不生效，无需配置",
         "type": "object",
         "items": {
             "enabled_llm": {
                 "description": "使用 LLM 判断情感",
                 "type": "bool",
-                "hint": "开启后，将使用 LLM 模型判断当前文本的情绪，从而改变语音的情绪参数。若关闭， 则使用情绪条目的触发词来匹配情绪",
+                "hint": "开启后用 LLM 判断文本情绪以改变语音参数；关闭则用触发词匹配。使用 /qqbot 时不生效",
                 "default": false
             },
             "provider_id": {
-                "description": "判断情感用的LLM提供商",
+                "description": "判断情感用的 LLM 提供商",
                 "type": "string",
                 "default": "",
-                "hint": "留空或者填写的提供商不存在时, 则使用当前正在使用的LLM提供商。 tip:工作较为简单，建议用稳定便宜又快速的小模型",
+                "hint": "使用 /qqbot 时不生效",
                 "_special": "select_provider"
             }
         }
@@ -341,7 +365,7 @@
     },
     "entry_storage": {
         "description": "情绪参数配置",
-        "hint": "可自定义多套情绪参数，并定义对应触发词。由此实现不同情绪的语音",
+        "hint": "可自定义多套情绪参数与触发词。使用 /qqbot 接口时不生效，无需配置",
         "type": "template_list",
         "templates": {
             "default": {

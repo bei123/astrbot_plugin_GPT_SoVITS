@@ -4,4 +4,4 @@ desc: 对接本地部署的GPT_SoVITS,为astrbot提供文本转语音(TTS)服务
 help: 略
 version: v3.1.0
 author: Zhalslar
-repo: https://github.com/Zhalslar/astrbot_plugin_GPT_SoVITS
+repo: https://github.com/bei123/astrbot_plugin_GPT_SoVITS

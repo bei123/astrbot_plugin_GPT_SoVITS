@@ -14,12 +14,18 @@ class GPTSoVITSService:
         client: GSVApiClient,
         local_data: LocalDataManager,
     ):
+        self._config = config
         self.cfg = config.model
         self.default_params = config.default_params
         self.client = client
         self.local_data = local_data
 
     async def load_model(self):
+        # 使用 QQ 机器人专用接口 (/qqbot) 时由上游管理模型，无需填写或加载本地权重
+        endpoint = (self._config.client.tts_endpoint or "/tts").strip() or "/tts"
+        if endpoint.rstrip("/").endswith("/qqbot"):
+            logger.info("使用 QQ 机器人专用接口，跳过 GPT/SoVITS 权重加载")
+            return
         if self.cfg.gpt_path:
             result = await self.client.set_gpt_weights(self.cfg.gpt_path)
             if result.ok:

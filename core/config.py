@@ -117,6 +117,9 @@ class AutoConfig(ConfigNode):
 class ClientConfig(ConfigNode):
     base_url: str
     timeout: int
+    tts_endpoint: str  # "/tts" 为 GET 参数；"/qqbot" 为 POST JSON（text, text_language, model_name）
+    say_command: str  # 触发 TTS 的命令词，如「说」
+    say_command_aliases: str  # 命令别名，逗号分隔，如 "gsv,GSV"
 
 
 class ModelConfig(ConfigNode):
@@ -156,9 +159,9 @@ class PluginConfig(ConfigNode):
 
         self.model.gpt_path = self.normalize_path(self.model.gpt_path)
         self.model.sovits_path = self.normalize_path(self.model.sovits_path)
-        self.default_params["ref_audio_path"] = self.normalize_path(
-            self.default_params["ref_audio_path"]
-        )
+        ref_audio = self.default_params.get("ref_audio_path") or ""
+        if ref_audio.strip():
+            self.default_params["ref_audio_path"] = self.normalize_path(ref_audio)
         self.cache.path = self.normalize_path(self.cache.path)
 
         self.builtin_entry_file = self.plugin_dir / "builtin_entry.yaml"
