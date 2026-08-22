@@ -1,4 +1,3 @@
-# config.py
 from __future__ import annotations
 
 import re
@@ -11,21 +10,13 @@ from astrbot.api import logger
 from astrbot.core.config.astrbot_config import AstrBotConfig
 from astrbot.core.provider.provider import Provider
 from astrbot.core.star.context import Context
-from astrbot.core.star.star_tools import StarTools
-from astrbot.core.utils.astrbot_path import get_astrbot_plugin_path
+from astrbot.core.utils.astrbot_path import (
+    get_astrbot_plugin_data_path,
+    get_astrbot_plugin_path,
+)
 
 
 class ConfigNode:
-    """
-    配置节点, 把 dict 变成强类型对象。
-
-    规则：
-    - schema 来自子类类型注解
-    - 声明字段：读写，写回底层 dict
-    - 未声明字段和下划线字段：仅挂载属性，不写回
-    - 支持 ConfigNode 多层嵌套（lazy + cache）
-    """
-
     _SCHEMA_CACHE: dict[type, dict[str, type]] = {}
     _FIELDS_CACHE: dict[type, set[str]] = {}
 
@@ -58,7 +49,7 @@ class ConfigNode:
                 continue
             if self._is_optional(tp):
                 continue
-            logger.warning(f"[config:{self.__class__.__name__}] 缺少字段: {key}")
+            logger.warning(f"[config:{self.__class__.__name__}] miss key: {key}")
 
     def __getattr__(self, key: str) -> Any:
         if key in self._fields():
@@ -70,8 +61,7 @@ class ConfigNode:
                 if key not in children:
                     if not isinstance(value, MutableMapping):
                         raise TypeError(
-                            f"[config:{self.__class__.__name__}] "
-                            f"字段 {key} 期望 dict，实际是 {type(value).__name__}"
+                            f"[config:{self.__class__.__name__}] is not dict"
                         )
                     children[key] = tp(value)
                 return children[key]
@@ -90,23 +80,14 @@ class ConfigNode:
         object.__setattr__(self, key, value)
 
     def raw_data(self) -> Mapping[str, Any]:
-        """
-        底层配置 dict 的只读视图
-        """
         return MappingProxyType(self._data)
 
     def save_config(self) -> None:
-        """
-        保存配置到磁盘（仅允许在根节点调用）
-        """
         if not isinstance(self._data, AstrBotConfig):
             raise RuntimeError(
-                f"{self.__class__.__name__}.save_config() 只能在根配置节点上调用"
+                f"{self.__class__.__name__}.save_config() only support AstrBotConfig"
             )
         self._data.save_config()
-
-
-# ============ 插件自定义配置 ==================
 
 
 class AutoConfig(ConfigNode):
@@ -152,7 +133,7 @@ class PluginConfig(ConfigNode):
         super().__init__(cfg)
         self.context = context
 
-        self.data_dir = StarTools.get_data_dir(self._plugin_name)
+        self.data_dir = Path(get_astrbot_plugin_data_path()) / self._plugin_name
         self.plugin_dir = Path(get_astrbot_plugin_path()) / self._plugin_name
 
         self.model.gpt_path = self.normalize_path(self.model.gpt_path)
