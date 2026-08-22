@@ -333,9 +333,9 @@
             },
             "path": {
                 "description": "缓存路径",
-                "hint": "请使用 “/” 分隔路径，支持绝对路径和相对路径；留空时默认 data/plugins_data/astrbot_plugin_GPT_SoVITS/audio",
+                "hint": "请使用 “/” 分隔路径，支持绝对路径和相对路径；留空时默认 data/plugin_data/astrbot_plugin_GPT_SoVITS/audio",
                 "type": "string",
-                "default": "data/plugins_data/astrbot_plugin_GPT_SoVITS/audio"
+                "default": "data/plugin_data/astrbot_plugin_GPT_SoVITS/audio"
             }
         }
     },
